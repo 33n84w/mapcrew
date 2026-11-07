@@ -1,3 +1,6 @@
+<p align="center">
+  <img src="assets/banner.svg" alt="mapcrew" width="100%">
+</p>
 # MapCrew
 
 MapCrew is a small, staged workflow for turning a geospatial question into a documented, quality-checked analysis and a shareable map. A lead agent, Captain, plans the route, hands work to specialist agents, and checks each handoff.
