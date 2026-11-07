@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AgentGIS | GeoJSON Viewer</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #1d2927;
+      --muted: #64716e;
+      --line: #d7dfdc;
+      --paper: #f5f7f4;
+      --panel: #ffffff;
+      --forest: #174e43;
+      --mint: #d7eee4;
+      --coral: #c85c3a;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font: 15px/1.45 "Avenir Next", "Segoe UI", sans-serif;
+    }
+    .app {
+      display: grid;
+      grid-template-columns: minmax(270px, 330px) minmax(0, 1fr);
+      min-height: 100vh;
+    }
+    aside {
+      z-index: 500;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      padding: 24px 20px;
+      background: var(--panel);
+      border-right: 1px solid var(--line);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--line);
+    }
+    .brand-mark {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      place-items: center;
+      color: var(--forest);
+      background: var(--mint);
+      border-radius: 9px;
+      font-weight: 800;
+    }
+    h1 { margin: 0; font-size: 17px; line-height: 1.2; }
+    .subtitle { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
+    h2 {
+      margin: 0 0 9px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 750;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+    .field { display: grid; gap: 7px; }
+    .field + .field { margin-top: 12px; }
+    label { font-size: 13px; font-weight: 650; }
+    input[type="file"], input[type="text"], select {
+      width: 100%;
+      min-height: 40px;
+      padding: 8px 10px;
+      color: var(--ink);
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      font: inherit;
+    }
+    input[type="file"] { padding: 7px; font-size: 12px; }
+    :focus-visible { outline: 3px solid #68ad96; outline-offset: 2px; }
+    .hint { margin: 0; color: var(--muted); font-size: 12px; }
+    .layer-list { display: grid; gap: 8px; }
+    .empty {
+      padding: 12px;
+      color: var(--muted);
+      background: var(--paper);
+      border: 1px dashed #bdc9c4;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+    .layer-row {
+      display: grid;
+      grid-template-columns: 18px 11px minmax(0, 1fr) 32px;
+      align-items: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 5px 7px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+    }
+    .layer-row label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .layer-color { width: 11px; height: 11px; border-radius: 3px; }
+    button {
+      min-height: 32px;
+      color: var(--forest);
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      font: inherit;
+      cursor: pointer;
+    }
+    button:hover { background: var(--mint); }
+    .remove { color: #8c3d2c; font-size: 18px; }
+    .status {
+      min-height: 20px;
+      color: var(--muted);
+      font-size: 12px;
+      overflow-wrap: anywhere;
+    }
+    .status.error { color: #9f3825; }
+    .footnote {
+      margin-top: auto;
+      padding-top: 14px;
+      color: var(--muted);
+      border-top: 1px solid var(--line);
+      font-size: 11px;
+    }
+    .map-shell { display: grid; grid-template-rows: auto minmax(0, 1fr); min-width: 0; }
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 58px;
+      padding: 9px 16px;
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+    }
+    .toolbar strong { font-size: 13px; }
+    .toolbar span { color: var(--muted); font-size: 12px; }
+    .toolbar-actions { display: flex; align-items: center; gap: 12px; }
+    .toolbar button { padding: 5px 9px; font-size: 12px; }
+    #map { min-height: 420px; width: 100%; background: #e6ece8; }
+    .popup-title { margin: 0 0 7px; font-size: 14px; }
+    .popup-table { display: grid; grid-template-columns: minmax(70px, auto) minmax(80px, 1fr); gap: 4px 10px; margin: 0; font-size: 12px; }
+    .popup-table dt { color: var(--muted); overflow-wrap: anywhere; }
+    .popup-table dd { margin: 0; overflow-wrap: anywhere; }
+
+    @media (max-width: 760px) {
+      .app { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(55vh, 1fr); }
+      aside { gap: 14px; padding: 16px; border-right: 0; border-bottom: 1px solid var(--line); }
+      .footnote { margin-top: 0; }
+      #map { min-height: 55vh; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside aria-label="Map controls">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">A</div>
+        <div>
+          <h1>AgentGIS Viewer</h1>
+          <p class="subtitle">Local GeoJSON workspace</p>
+        </div>
+      </div>
+
+      <section>
+        <h2>Data</h2>
+        <div class="field">
+          <label for="geojson-files">Add GeoJSON layers</label>
+          <input id="geojson-files" type="file" accept=".json,.geojson,application/geo+json,application/json" multiple>
+          <p class="hint">Choose one or more FeatureCollection files in WGS 84 longitude/latitude.</p>
+        </div>
+        <div class="field">
+          <label for="data-attribution">Data attribution</label>
+          <input id="data-attribution" type="text" placeholder="Example: Data: Natural Earth">
+        </div>
+      </section>
+
+      <section>
+        <h2>Layers</h2>
+        <div id="layer-list" class="layer-list" aria-live="polite">
+          <div class="empty">No layers loaded yet.</div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Basemap</h2>
+        <div class="field">
+          <label for="basemap">Background</label>
+          <select id="basemap">
+            <option value="osm">OpenStreetMap</option>
+            <option value="none">No basemap</option>
+          </select>
+        </div>
+      </section>
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+      <p class="footnote">Leaflet and map tiles load from the internet. OpenStreetMap attribution is shown on the map. Follow the tile provider's usage policy.</p>
+    </aside>
+
+    <main class="map-shell">
+      <header class="toolbar">
+        <strong>Interactive map</strong>
+        <div class="toolbar-actions">
+          <span id="feature-count">0 features</span>
+          <button id="fit-all" type="button">Fit layers</button>
+        </div>
+      </header>
+      <div id="map" role="application" aria-label="Interactive map"></div>
+    </main>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    (() => {
+      const palette = ["#176B5B", "#C85C3A", "#3977A8", "#A17A16", "#775A91", "#378B8B", "#B45178", "#65783D"];
+      const map = L.map("map", { preferCanvas: true }).setView([18, 0], 2);
+      const osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap contributors</a>"
+      }).addTo(map);
+      const blank = L.layerGroup();
+      const layers = new Map();
+      const fileInput = document.getElementById("geojson-files");
+      const layerList = document.getElementById("layer-list");
+      const status = document.getElementById("status");
+      const count = document.getElementById("feature-count");
+      const basemapSelect = document.getElementById("basemap");
+      const attributionInput = document.getElementById("data-attribution");
+      let colorIndex = 0;
+      let nextLayerId = 1;
+      let currentAttribution = "";
+
+      function announce(message, isError = false) {
+        status.textContent = message;
+        status.classList.toggle("error", isError);
+      }
+
+      function featureCollection(data) {
+        if (data && data.type === "FeatureCollection" && Array.isArray(data.features)) return data;
+        if (data && data.type === "Feature") return { type: "FeatureCollection", features: [data] };
+        throw new Error("Expected a GeoJSON Feature or FeatureCollection.");
+      }
+
+      function popupContent(feature) {
+        const container = document.createElement("div");
+        const title = document.createElement("h3");
+        title.className = "popup-title";
+        title.textContent = "Feature details";
+        container.appendChild(title);
+
+        const properties = feature && feature.properties && typeof feature.properties === "object"
+          ? Object.entries(feature.properties).slice(0, 20)
+          : [];
+        if (properties.length === 0) {
+          const empty = document.createElement("p");
+          empty.textContent = "No properties available.";
+          container.appendChild(empty);
+          return container;
+        }
+
+        const table = document.createElement("dl");
+        table.className = "popup-table";
+        properties.forEach(([key, value]) => {
+          const term = document.createElement("dt");
+          const description = document.createElement("dd");
+          term.textContent = key;
+          description.textContent = value !== null && typeof value === "object"
+            ? JSON.stringify(value)
+            : String(value ?? "");
+          table.append(term, description);
+        });
+        container.appendChild(table);
+        return container;
+      }
+
+      function updateCount() {
+        const total = [...layers.values()].reduce((sum, item) => sum + item.featureCount, 0);
+        count.textContent = `${total.toLocaleString()} ${total === 1 ? "feature" : "features"}`;
+      }
+
+      function escapeHtml(value) {
+        return value.replace(/[&<>"']/g, (character) => ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          "\"": "&quot;",
+          "'": "&#39;"
+        })[character]);
+      }
+
+      function fitVisibleLayers() {
+        const visibleLayers = [...layers.values()]
+          .filter((item) => map.hasLayer(item.layer))
+          .map((item) => item.layer);
+        const bounds = L.featureGroup(visibleLayers).getBounds();
+        if (bounds.isValid()) map.fitBounds(bounds.pad(0.08), { maxZoom: 12 });
+      }
+
+      function addLayer(name, data) {
+        const collection = featureCollection(data);
+        const color = palette[colorIndex++ % palette.length];
+        const geoJsonLayer = L.geoJSON(collection, {
+          style: { color, weight: 1.4, opacity: 0.9, fillColor: color, fillOpacity: 0.28 },
+          pointToLayer: (_feature, latlng) => L.circleMarker(latlng, {
+            radius: 6, color, weight: 1.5, fillColor: color, fillOpacity: 0.8
+          }),
+          onEachFeature: (feature, featureLayer) => featureLayer.bindPopup(() => popupContent(feature))
+        });
+        geoJsonLayer.addTo(map);
+
+        const row = document.createElement("div");
+        row.className = "layer-row";
+        const toggle = document.createElement("input");
+        toggle.type = "checkbox";
+        toggle.checked = true;
+        toggle.id = `layer-${nextLayerId++}`;
+        const label = document.createElement("label");
+        label.htmlFor = toggle.id;
+        label.textContent = name;
+        const swatch = document.createElement("span");
+        swatch.className = "layer-color";
+        swatch.style.backgroundColor = color;
+        const remove = document.createElement("button");
+        remove.className = "remove";
+        remove.type = "button";
+        remove.textContent = "×";
+        remove.setAttribute("aria-label", `Remove ${name}`);
+        row.append(toggle, swatch, label, remove);
+        layerList.querySelector(".empty")?.remove();
+        layerList.appendChild(row);
+
+        toggle.addEventListener("change", () => {
+          if (toggle.checked) geoJsonLayer.addTo(map);
+          else map.removeLayer(geoJsonLayer);
+        });
+        remove.addEventListener("click", () => {
+          map.removeLayer(geoJsonLayer);
+          layers.delete(row);
+          row.remove();
+          if (layers.size === 0) {
+            const empty = document.createElement("div");
+            empty.className = "empty";
+            empty.textContent = "No layers loaded yet.";
+            layerList.appendChild(empty);
+          }
+          updateCount();
+        });
+
+        const featureCount = collection.features.length;
+        layers.set(row, { layer: geoJsonLayer, featureCount });
+        const bounds = geoJsonLayer.getBounds();
+        if (bounds.isValid()) map.fitBounds(bounds.pad(0.08), { maxZoom: 12 });
+        updateCount();
+      }
+
+      fileInput.addEventListener("change", async (event) => {
+        const files = [...event.target.files];
+        for (const file of files) {
+          try {
+            const data = JSON.parse(await file.text());
+            addLayer(file.name, data);
+            announce(`Loaded ${file.name}.`);
+          } catch (error) {
+            announce(`${file.name}: ${error.message}`, true);
+          }
+        }
+        fileInput.value = "";
+      });
+
+      basemapSelect.addEventListener("change", () => {
+        if (basemapSelect.value === "osm") osm.addTo(map);
+        else map.removeLayer(osm);
+      });
+
+      document.getElementById("fit-all").addEventListener("click", fitVisibleLayers);
+
+      attributionInput.addEventListener("change", () => {
+        if (currentAttribution) map.attributionControl.removeAttribution(currentAttribution);
+        currentAttribution = escapeHtml(attributionInput.value.trim());
+        if (currentAttribution) map.attributionControl.addAttribution(currentAttribution);
+      });
+    })();
+  </script>
+</body>
+</html>
