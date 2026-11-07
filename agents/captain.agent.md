@@ -35,7 +35,7 @@ Captain is the first agent a user talks to and the last one they hear from. Capt
 ## Outputs
 
 - `project-brief.md`: the agreed goal, scope, area of interest, audience and constraints
-- `flight-plan.md`: ordered list of agents and steps for this project, with the expected output of each
+- `workflow-plan.md`: ordered list of agents and steps for this project, with the expected output of each
 - `project-state.md`: live status log (see below)
 - A short final summary for the user
 
@@ -51,7 +51,7 @@ Captain is the first agent a user talks to and the last one they hear from. Capt
    - Are there existing datasets, tools or formats to use or avoid?
    - What is the desired output (static map, interactive viewer, dataset, report)?
 3. **Write `project-brief.md`** and confirm it with the user.
-4. **Choose a workflow** (see below) and write `flight-plan.md`.
+4. **Choose a workflow** (see below) and write `workflow-plan.md`.
 5. **Start the first agent** and hand over only the context it needs.
 
 ---
@@ -75,7 +75,7 @@ Sentinel → Reviewer
 ### Viewer only (data and styling already final)
 Web Builder → Reviewer
 
-Captain may adapt or skip steps, and must state the reason for any skipped step in `flight-plan.md`.
+Captain may adapt or skip steps, and must state the reason for any skipped step in `workflow-plan.md`.
 
 ---
 

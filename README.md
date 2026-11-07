@@ -25,10 +25,17 @@ MapCrew is a small, staged workflow for turning a geospatial question into a doc
 
 Captain is the first agent you talk to and the last one you hear from. Captain does not do the specialist work.
 
+## Using in VS Code
+
+1. Create a new folder for your project outside this repository, for example `C:\Users\username\my-map-project`.
+2. In VS Code, choose **File > Add Folder to Workspace** and add both this MapCrew repository and your new project folder. This lets Copilot Chat read the MapCrew guides while keeping project files separate.
+3. Open Copilot Chat and start with the Captain guide at `agents/captain.agent.md`. If Captain is available in the agent picker, select it; otherwise, attach or reference the guide in your chat and ask it to lead the workflow.
+4. Tell Captain which folder is your project folder, then describe the map or analysis you want. Ask Captain to put all project outputs in that folder and leave the MapCrew repository unchanged.
+
 ## Typical Sequence
 
-1. Start with Captain (`agents/captain.md`). Captain clarifies your question and constraints using `templates/brief-template.md` and saves the result as `project-brief.md`.
-2. Captain picks a route, such as `workflows/quick-map.md` or `workflows/site-selection.md`, and records it in `flight-plan.md`. Progress is tracked in `project-state.md` so work can be resumed later.
+1. Start with Captain (`agents/captain.agent.md`). Captain clarifies your question and constraints using `templates/brief-template.md` and saves the result as `project-brief.md`.
+2. Captain picks a route, such as `workflows/quick-map.md` or `workflows/site-selection.md`, and records the ordered steps and expected outputs in `workflow-plan.md`. Progress is tracked in `project-state.md` so work can be resumed later.
 3. Scout documents candidate sources in `data-sources.md`; verify license, attribution, and coverage before selection.
 4. Sentinel checks data quality and records results in `qa-report.md`.
 5. Analyst documents the method and CRS in `analysis-plan.md`, then saves and runs the analysis script.
@@ -37,7 +44,7 @@ Captain is the first agent you talk to and the last one you hear from. Captain d
 8. Reviewer records a final go/no-go in `review.md`.
 9. Captain delivers the final outputs and a short project summary.
 
-Captain may skip steps that are not needed (for example, Scout when you already have data) and records the reason in `flight-plan.md`.
+Captain may skip steps that are not needed (for example, Scout when you already have data) and records the reason in `workflow-plan.md`.
 
 Do not skip a failed QA gate or present assumptions as verified facts. Keep source data unchanged; save derived outputs separately and document transformations.
 
