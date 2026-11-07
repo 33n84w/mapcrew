@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/banner-mapcrew-gis.svg" alt="mapcrew" width="100%">
+  <img src="assets/banner-mapcrew-gis.svg" width="100%">
 </p>
 # MapCrew
 
