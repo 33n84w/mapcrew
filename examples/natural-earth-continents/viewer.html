@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Natural Earth Continents Map</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #1f2a2b;
+      --muted: #5d6a6b;
+      --line: #d8dfdf;
+      --panel: #ffffff;
+      --paper: #f4f7f6;
+      --accent: #16574a;
+      --nodata: #b3b8bc;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font: 15px/1.45 "Avenir Next", "Segoe UI", sans-serif;
+    }
+    .app {
+      display: grid;
+      grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+      min-height: 100vh;
+    }
+    aside {
+      z-index: 500;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding: 18px;
+      background: var(--panel);
+      border-right: 1px solid var(--line);
+    }
+    h1 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.2;
+    }
+    .subtitle {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    h2 {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .card {
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-height: 32px;
+    }
+    label { font-weight: 600; font-size: 13px; }
+    select, button {
+      min-height: 34px;
+      padding: 6px 10px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+    }
+    button { cursor: pointer; }
+    button:hover { background: #edf5f2; }
+    .layer-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+    }
+    .legend {
+      display: grid;
+      gap: 7px;
+      margin-top: 6px;
+    }
+    .legend-item {
+      display: grid;
+      grid-template-columns: 12px minmax(0, 1fr);
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+    }
+    .swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      border: 1px solid rgba(0, 0, 0, 0.2);
+    }
+    .meta {
+      margin-top: auto;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .map-shell { display: grid; grid-template-rows: auto minmax(0, 1fr); }
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 56px;
+      padding: 10px 14px;
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+    }
+    .toolbar strong { font-size: 14px; }
+    .toolbar span { color: var(--muted); font-size: 12px; }
+    #map { min-height: 440px; width: 100%; background: #e5ece9; }
+    .status {
+      min-height: 18px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .status.error { color: #9d3f2b; }
+    .popup-grid {
+      display: grid;
+      grid-template-columns: minmax(78px, auto) minmax(100px, 1fr);
+      gap: 4px 9px;
+      margin: 0;
+      font-size: 12px;
+    }
+    .popup-grid dt { color: var(--muted); }
+    .popup-grid dd { margin: 0; }
+
+    @media (max-width: 760px) {
+      .app {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto minmax(55vh, 1fr);
+      }
+      aside {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+      #map { min-height: 55vh; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside aria-label="Map controls">
+      <div>
+        <h1>Countries by Continent</h1>
+        <p class="subtitle">Natural Earth Admin 0 Countries (1:110m)</p>
+      </div>
+
+      <section class="card">
+        <h2>Layer</h2>
+        <div class="layer-toggle">
+          <input id="layer-visible" type="checkbox" checked>
+          <label for="layer-visible">Countries</label>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Basemap</h2>
+        <div class="row">
+          <label for="basemap">Background</label>
+          <select id="basemap">
+            <option value="osm">OpenStreetMap</option>
+            <option value="none">No basemap</option>
+          </select>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Legend: Continent</h2>
+        <div id="legend" class="legend"></div>
+      </section>
+
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+      <p class="meta">Data: Natural Earth (public domain); see archive notices for third-party contributions.</p>
+    </aside>
+
+    <main class="map-shell">
+      <header class="toolbar">
+        <strong>Natural Earth Continents</strong>
+        <div>
+          <span id="feature-count">0 features</span>
+          <button id="fit-world" type="button">Global extent</button>
+        </div>
+      </header>
+      <div id="map" role="application" aria-label="Countries by continent"></div>
+    </main>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    (() => {
+      const continentColors = {
+        "Africa": "#D55E00",
+        "Antarctica": "#56B4E9",
+        "Asia": "#009E73",
+        "Europe": "#CC79A7",
+        "North America": "#E69F00",
+        "Oceania": "#0072B2",
+        "South America": "#F0E442"
+      };
+
+      const noDataColor = getComputedStyle(document.documentElement).getPropertyValue("--nodata").trim() || "#b3b8bc";
+      const map = L.map("map", { preferCanvas: true }).setView([20, 0], 2);
+      const countriesVisibleToggle = document.getElementById("layer-visible");
+      const basemapSelect = document.getElementById("basemap");
+      const status = document.getElementById("status");
+      const featureCount = document.getElementById("feature-count");
+      const legend = document.getElementById("legend");
+
+      const osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap contributors</a>"
+      }).addTo(map);
+
+      let countriesLayer = null;
+      let countryBounds = null;
+      let observedContinents = new Set();
+
+      function announce(message, isError = false) {
+        status.textContent = message;
+        status.classList.toggle("error", isError);
+      }
+
+      function colorForContinent(value) {
+        const text = typeof value === "string" ? value.trim() : "";
+        return continentColors[text] || noDataColor;
+      }
+
+      function popupHtml(feature) {
+        const props = feature && feature.properties ? feature.properties : {};
+        const country = props.NAME_EN || props.NAME || props.ADMIN || "Unknown";
+        const continent = props.CONTINENT || "No data";
+        return `
+          <h3 style="margin:0 0 6px;font-size:14px;">${country}</h3>
+          <dl class="popup-grid">
+            <dt>Country</dt><dd>${country}</dd>
+            <dt>Continent</dt><dd>${continent}</dd>
+          </dl>
+        `;
+      }
+
+      function buildLegend() {
+        legend.innerHTML = "";
+        const entries = [...observedContinents].sort((a, b) => a.localeCompare(b));
+
+        entries.forEach((name) => {
+          const item = document.createElement("div");
+          item.className = "legend-item";
+          item.innerHTML = `<span class="swatch" style="background:${colorForContinent(name)}"></span><span>${name}</span>`;
+          legend.appendChild(item);
+        });
+
+        if (!entries.includes("No data")) {
+          const item = document.createElement("div");
+          item.className = "legend-item";
+          item.innerHTML = `<span class="swatch" style="background:${noDataColor}"></span><span>No data</span>`;
+          legend.appendChild(item);
+        }
+      }
+
+      async function loadCountries() {
+        announce("Loading countries layer...");
+        try {
+          const response = await fetch("./data/countries.geojson");
+          if (!response.ok) throw new Error(`Request failed with ${response.status}.`);
+          const geojson = await response.json();
+          if (!geojson || geojson.type !== "FeatureCollection" || !Array.isArray(geojson.features)) {
+            throw new Error("Expected a GeoJSON FeatureCollection.");
+          }
+
+          observedContinents = new Set();
+
+          countriesLayer = L.geoJSON(geojson, {
+            style: (feature) => {
+              const continent = feature && feature.properties ? feature.properties.CONTINENT : null;
+              const normalized = typeof continent === "string" && continent.trim() ? continent.trim() : "No data";
+              observedContinents.add(normalized);
+              const fill = colorForContinent(normalized);
+              return {
+                color: "#576063",
+                weight: 0.7,
+                opacity: 0.9,
+                fillColor: fill,
+                fillOpacity: 0.72
+              };
+            },
+            onEachFeature: (feature, layer) => {
+              layer.bindPopup(() => popupHtml(feature));
+            }
+          }).addTo(map);
+
+          countryBounds = countriesLayer.getBounds();
+          if (countryBounds.isValid()) {
+            map.fitBounds(countryBounds.pad(0.04), { maxZoom: 4 });
+          }
+
+          featureCount.textContent = `${geojson.features.length.toLocaleString()} features`;
+          buildLegend();
+          announce("Countries layer loaded.");
+        } catch (error) {
+          announce(`Could not load data/countries.geojson: ${error.message}`, true);
+        }
+      }
+
+      countriesVisibleToggle.addEventListener("change", () => {
+        if (!countriesLayer) return;
+        if (countriesVisibleToggle.checked) countriesLayer.addTo(map);
+        else map.removeLayer(countriesLayer);
+      });
+
+      basemapSelect.addEventListener("change", () => {
+        if (basemapSelect.value === "osm") osm.addTo(map);
+        else map.removeLayer(osm);
+      });
+
+      document.getElementById("fit-world").addEventListener("click", () => {
+        if (countryBounds && countryBounds.isValid()) {
+          map.fitBounds(countryBounds.pad(0.04), { maxZoom: 4 });
+        } else {
+          map.setView([20, 0], 2);
+        }
+      });
+
+      loadCountries();
+    })();
+  </script>
+</body>
+</html>

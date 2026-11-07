@@ -16,7 +16,7 @@ See [data-sources.md](data-sources.md) before downloading. Natural Earth's terms
    ogr2ogr -f GeoJSON countries.geojson ne_110m_admin_0_countries.shp -t_srs EPSG:4326
    ```
 
-4. Open `../../viewer/viewer.html`, load `countries.geojson`, and set the data attribution as documented in `data-sources.md`.
-5. Apply the categorical treatment in [map-spec.md](map-spec.md). Do not use the continent colors as an ordered scale.
+4. Open `viewer.html` in this folder. It auto-loads `data/countries.geojson`, applies the continent palette from [map-spec.md](map-spec.md), and includes legend, popup, layer toggle, and global extent controls.
+5. If you use a different countries file, verify field names for country and continent and keep attribution aligned with `data-sources.md`.
 
 The viewer starter does not automatically implement this example's category palette; customize its style using the map specification. The map is a generalized global overview, not a source for local boundaries or precise area measurements.
