@@ -1,6 +1,6 @@
 # Geopilot
 
-AgentGIS is a small, staged workflow for turning a geospatial question into a documented, quality-checked analysis and a shareable map.
+Geopilot is a small, staged workflow for turning a geospatial question into a documented, quality-checked analysis and a shareable map.
 
 ## Repository Layout
 
