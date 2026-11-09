@@ -193,13 +193,16 @@
         <div class="field">
           <label for="basemap">Background</label>
           <select id="basemap">
-            <option value="osm">OpenStreetMap</option>
+            <option value="esri" selected>Esri World Topographic Map</option>
+            <option value="esri-street">Esri World Street Map</option>
+            <option value="esri-imagery">Esri World Imagery (Satellite)</option>
+            <option value="osm-street">OpenStreetMap Standard</option>
             <option value="none">No basemap</option>
           </select>
         </div>
       </section>
       <div id="status" class="status" role="status" aria-live="polite"></div>
-      <p class="footnote">Leaflet and map tiles load from the internet. OpenStreetMap attribution is shown on the map. Follow the tile provider's usage policy.</p>
+      <p class="footnote">Basemap tiles load from the internet. Attribution appears on the map; follow the selected provider's usage policy.</p>
     </aside>
 
     <main class="map-shell">
@@ -219,10 +222,22 @@
     (() => {
       const palette = ["#176B5B", "#C85C3A", "#3977A8", "#A17A16", "#775A91", "#378B8B", "#B45178", "#65783D"];
       const map = L.map("map", { preferCanvas: true }).setView([18, 0], 2);
-      const osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      const esri = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}", {
+        maxZoom: 19,
+        attribution: "Tiles &copy; Esri — Sources: Esri, HERE, Garmin, Intermap, increment P Corp., GEBCO, USGS, FAO, NPS, NRCAN, GeoBase, IGN, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), &copy; OpenStreetMap contributors, and the GIS User Community. <a href=\"https://goto.arcgisonline.com/maps/World_Topo_Map\">Terms and details</a>."
+      }).addTo(map);
+      const esriStreet = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}", {
+        maxZoom: 19,
+        attribution: "Tiles &copy; Esri — Sources: Esri, HERE, Garmin, USGS, Intermap, INCREMENT P, NRCan, Esri Japan, METI, Esri China (Hong Kong), Esri Korea, Esri (Thailand), NGCC, &copy; OpenStreetMap contributors, and the GIS User Community. <a href=\"https://goto.arcgisonline.com/maps/World_Street_Map\">Terms and details</a>."
+      });
+      const esriImagery = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+        maxZoom: 23,
+        attribution: "Source: Esri, Vantor, Earthstar Geographics, and the GIS User Community. <a href=\"https://goto.arcgisonline.com/maps/World_Imagery\">Terms and details</a>."
+      });
+      const osmStreet = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
         maxZoom: 19,
         attribution: "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap contributors</a>"
-      }).addTo(map);
+      });
       const blank = L.layerGroup();
       const layers = new Map();
       const fileInput = document.getElementById("geojson-files");
@@ -373,8 +388,14 @@
       });
 
       basemapSelect.addEventListener("change", () => {
-        if (basemapSelect.value === "osm") osm.addTo(map);
-        else map.removeLayer(osm);
+        map.removeLayer(esri);
+        map.removeLayer(esriStreet);
+        map.removeLayer(esriImagery);
+        map.removeLayer(osmStreet);
+        if (basemapSelect.value === "esri") esri.addTo(map);
+        if (basemapSelect.value === "esri-street") esriStreet.addTo(map);
+        if (basemapSelect.value === "esri-imagery") esriImagery.addTo(map);
+        if (basemapSelect.value === "osm-street") osmStreet.addTo(map);
       });
 
       document.getElementById("fit-all").addEventListener("click", fitVisibleLayers);

@@ -54,7 +54,7 @@ Captain pauses to confirm with you after the brief, after data QA, after the ana
 
 ## Viewer Starter
 
-Open `viewer/viewer.html` directly in a modern browser and choose one or more GeoJSON files. The starter needs no build step or API key. Leaflet and OpenStreetMap tiles are loaded from public internet services, so an internet connection is required for the map library and basemap. OpenStreetMap attribution is included; respect the tile service usage policy and use an appropriate provider for production or high-volume use.
+Open `viewer/viewer.html` directly in a modern browser and choose one or more GeoJSON files. The starter needs no build step. Leaflet and Esri World Topographic Map, World Street Map, and World Imagery (satellite) tiles, plus OpenStreetMap Standard tiles, load from the internet. Attribution for the selected basemap is shown on the map. Follow [Esri's terms](https://goto.arcgisonline.com/maps/World_Topo_Map) or the [OpenStreetMap tile usage policy](https://operations.osmfoundation.org/policies/tiles/); OSM Standard is for normal interactive viewing only, not bulk downloading or offline use. The OSM tile service requires a valid HTTP referrer, which may not be sent when this page is opened directly as a `file://` URL, so host the viewer on a web server when using that option.
 
 ## Example
 
