@@ -3,6 +3,8 @@
 </p>
 MapCrew is a small, staged workflow for turning a geospatial question into a documented, quality-checked analysis and a shareable map. A lead agent, Captain, plans the route, hands work to specialist agents, and checks each handoff.
 
+MapCrew doesn't replace GIS software. It adds a documented, quality-checked workflow on top of open GIS tools, so AI-assisted spatial analysis is reproducible and reviewable.
+
 ## Repository Layout
 
 - `agents/` - Captain (orchestrator) plus Scout, Sentinel, Analyst, Cartographer, Web Builder, and Reviewer persona definitions.
