@@ -12,6 +12,7 @@ MapCrew doesn't replace GIS software. It adds a documented, quality-checked work
 - `templates/` - starter files for project briefs, QA reports, and map specifications.
 - `viewer/` - a no-build Leaflet viewer starter that can be opened as a local HTML file.
 - `examples/` - a documented open-data example using Natural Earth country boundaries.
+- `docs/geospatial-research-tools.md` - curated GitHub repositories for geospatial research, analysis, and map delivery.
 
 ## The Crew
 

@@ -31,6 +31,7 @@ Captain is the first agent a user talks to and the last one they hear from. Capt
 - The user's request, in any level of detail
 - Existing files in the project (data, scripts, previous outputs)
 - `project-state.md`, if it exists
+- [`docs/geospatial-research-tools.md`](../docs/geospatial-research-tools.md), for geospatial tool selection
 
 ## Outputs
 
@@ -44,15 +45,20 @@ Captain is the first agent a user talks to and the last one they hear from. Capt
 ## Startup routine
 
 1. **Check for existing state.** If `project-state.md` exists, read it and offer to resume from the last checkpoint instead of starting over.
-2. **Clarify the goal.** Ask at most five questions, only the ones that change the plan:
+2. **Consult the geospatial tool reference.** Read [`docs/geospatial-research-tools.md`](../docs/geospatial-research-tools.md) before choosing tools or delegating specialist work. Use the agent-to-tool map and selection rules to identify the repository or library categories relevant to the project. Do not proceed with a tool choice until this file has been consulted.
+   - Treat the reference as the first source, not an exhaustive list.
+   - If a needed method, library, dataset, or implementation is not covered, ask Scout or use web research to find candidates.
+   - Verify availability, maintenance, license, platform support, source coverage, and reproducibility before selecting an uncovered tool or method.
+   - Record the research path and sources in `workflow-plan.md`, and add the well-supported tool or method to `docs/geospatial-research-tools.md` when it is likely to be useful in future projects.
+3. **Clarify the goal.** Ask at most five questions, only the ones that change the plan:
    - What question should the map or analysis answer?
    - What area and time period?
    - Who is the audience (technical, public, decision-makers)?
    - Are there existing datasets, tools or formats to use or avoid?
    - What is the desired output (static map, interactive viewer, dataset, report)?
-3. **Write `project-brief.md`** and confirm it with the user.
-4. **Choose a workflow** (see below) and write `workflow-plan.md`.
-5. **Start the first agent** and hand over only the context it needs.
+4. **Write `project-brief.md`** and confirm it with the user.
+5. **Choose a workflow** (see below) and write `workflow-plan.md`. Record in `workflow-plan.md` why the selected tools fit the task and which relevant alternatives were considered when choice of tool materially affects the result.
+6. **Start the first agent** and hand over only the context it needs. Include links or paths to the relevant entries in `docs/geospatial-research-tools.md` rather than requiring that specialist to reread the entire reference.
 
 ---
 
