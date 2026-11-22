@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Boston Public Transportation Routes</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #17233a;
+      --muted: #667085;
+      --line: #d6dce7;
+      --paper: #f4f6fa;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font: 15px/1.45 "Avenir Next", "Segoe UI", sans-serif;
+    }
+    .app {
+      display: grid;
+      grid-template-columns: 300px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+    aside {
+      z-index: 500;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      padding: 22px 18px;
+      background: #fff;
+      border-right: 1px solid var(--line);
+    }
+    h1 { margin: 0; font-size: 20px; line-height: 1.2; }
+    .subtitle { margin: 6px 0 0; color: var(--muted); }
+    h2 {
+      margin: 0 0 9px;
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+    .route-types { display: grid; gap: 9px; }
+    .route-toggle {
+      display: grid;
+      grid-template-columns: 18px 24px minmax(0, 1fr);
+      align-items: center;
+      gap: 8px;
+      min-height: 38px;
+      padding: 5px 8px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+    }
+    .swatch { display: block; height: 4px; width: 24px; border-radius: 3px; }
+    select {
+      width: 100%;
+      min-height: 40px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #fff;
+      font: inherit;
+    }
+    #map { min-height: 100vh; width: 100%; background: #dde4ef; }
+    .source {
+      margin-top: auto;
+      color: var(--muted);
+      border-top: 1px solid var(--line);
+      padding-top: 14px;
+      font-size: 11px;
+    }
+    .popup-title { margin: 0 0 6px; font-size: 14px; }
+    .popup-meta { margin: 0; color: var(--muted); font-size: 12px; }
+    :focus-visible { outline: 3px solid #5e8cff; outline-offset: 2px; }
+    @media (max-width: 760px) {
+      .app { grid-template-columns: 1fr; grid-template-rows: auto minmax(55vh, 1fr); }
+      aside { max-height: 42vh; overflow: auto; border-right: 0; border-bottom: 1px solid var(--line); }
+      #map { min-height: 55vh; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside aria-label="Map controls">
+      <div>
+        <h1>Boston Public Transportation</h1>
+        <p class="subtitle">Scheduled routes categorized by service type</p>
+      </div>
+
+      <section>
+        <h2>Route type</h2>
+        <div id="route-types" class="route-types"></div>
+      </section>
+
+      <section>
+        <h2>Basemap</h2>
+        <label for="basemap" style="position:absolute;width:1px;height:1px;overflow:hidden;">Basemap</label>
+        <select id="basemap">
+          <option value="street" selected>Esri World Street Map</option>
+          <option value="topo">Esri World Topographic Map</option>
+          <option value="imagery">Esri World Imagery</option>
+          <option value="none">No basemap</option>
+        </select>
+      </section>
+
+      <p class="source">
+        Scheduled geometry: <strong>MBTA GTFS</strong>, Fall 2026 feed.
+        Route lines are overview geometry and are not real-time or navigation guidance.
+        Basemap services require internet access and their own attribution.
+      </p>
+    </aside>
+    <main>
+      <div id="map" role="application" aria-label="Interactive map of Boston public transportation routes"></div>
+    </main>
+  </div>
+
+  <script src="./routes.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const categories = [
+      { type: "1", name: "Subway", color: "#1F78B4" },
+      { type: "0", name: "Light rail", color: "#00A6A6" },
+      { type: "2", name: "Commuter rail", color: "#6A3D9A" },
+      { type: "3", name: "Bus", color: "#E31A1C" },
+      { type: "4", name: "Ferry", color: "#00A67E" }
+    ];
+
+    const map = L.map("map", { preferCanvas: true }).setView([42.36, -71.06], 10);
+    const tileLayers = {
+      street: L.tileLayer(
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
+        { attribution: "Tiles &copy; Esri &mdash; Sources: Esri, HERE, Garmin, USGS, Intermap, INCREMENT P, NRCan, Esri Japan, METI, Esri China (Hong Kong), Esri Korea, Esri Thailand, Esri (Thailand), NGCC, &copy; OpenStreetMap contributors" }
+      ),
+      topo: L.tileLayer(
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
+        { attribution: "Tiles &copy; Esri &mdash; Esri, HERE, Garmin, USGS, Intermap, FAO, NOAA, EPA" }
+      ),
+      imagery: L.tileLayer(
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        { attribution: "Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community" }
+      )
+    };
+    let activeBasemap = tileLayers.street.addTo(map);
+
+    const basemapSelect = document.getElementById("basemap");
+    basemapSelect.addEventListener("change", () => {
+      if (activeBasemap) map.removeLayer(activeBasemap);
+      activeBasemap = basemapSelect.value === "none"
+        ? null
+        : tileLayers[basemapSelect.value].addTo(map);
+    });
+
+    const bounds = L.latLngBounds([]);
+    const categoryLayers = new Map();
+
+    for (const category of categories) {
+      const features = window.BOSTON_TRANSIT_ROUTES.features.filter(
+        feature => feature.properties.route_type === category.type
+      );
+      const layer = L.geoJSON(
+        { type: "FeatureCollection", features },
+        {
+          style: feature => ({
+            color: category.color,
+            weight: category.type === "3" ? 2 : 4,
+            opacity: category.type === "3" ? 0.72 : 0.9,
+            lineCap: "round",
+            lineJoin: "round"
+          }),
+          onEachFeature: (feature, featureLayer) => {
+            const properties = feature.properties;
+            featureLayer.bindPopup(
+              '<h3 class="popup-title">' +
+              escapeHtml(properties.route_name) +
+              '</h3><p class="popup-meta">' +
+              escapeHtml(properties.route_type_name) +
+              '<br>Route ID: ' + escapeHtml(properties.route_id) +
+              '</p>'
+            );
+            const featureBounds = featureLayer.getBounds();
+            if (featureBounds.isValid()) bounds.extend(featureBounds);
+          }
+        }
+      ).addTo(map);
+      categoryLayers.set(category.type, layer);
+
+      const row = document.createElement("label");
+      row.className = "route-toggle";
+      row.innerHTML =
+        '<input type="checkbox" checked aria-label="Show ' + escapeHtml(category.name) + '">' +
+        '<span class="swatch" style="background:' + category.color + '"></span>' +
+        '<span>' + escapeHtml(category.name) + ' (' + features.length + ' shapes)</span>';
+      const checkbox = row.querySelector("input");
+      checkbox.addEventListener("change", () => {
+        if (checkbox.checked) layer.addTo(map);
+        else map.removeLayer(layer);
+      });
+      document.getElementById("route-types").appendChild(row);
+    }
+
+    function escapeHtml(value) {
+      return String(value == null ? "" : value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    if (bounds.isValid()) map.fitBounds(bounds.pad(0.05));
+  </script>
+</body>
+</html>
